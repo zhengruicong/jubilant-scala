@@ -2,7 +2,7 @@ package com.jubilant.interfaces
 
 import cats.effect.IO
 import com.jubilant.common.Util.error2Json
-import com.jubilant.domain.Errors
+import com.jubilant.domain.{Errors, SERVER_ERROR}
 import io.circe.Encoder
 import io.circe.syntax._
 import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
@@ -23,18 +23,28 @@ package object routes {
   def okRes[T](
     future: Future[Either[Errors, T]]
   )(implicit encoder: Encoder[T], request: Option[Request[IO]] = None): IO[Response[IO]] =
-    IO.fromFuture(IO(future)).flatMap {
-      case Left(err)  => BadRequest(error2Json(err))
-      case Right(res) => Ok(res.asJson)
-    }
+    IO.fromFuture(IO(future))
+      .recover { pf =>
+        pf.printStackTrace()
+        Left(SERVER_ERROR)
+      }
+      .flatMap {
+        case Left(err)  => BadRequest(error2Json(err))
+        case Right(res) => Ok(res.asJson)
+      }
 
   def createdRes[T](
     future: Future[Either[Errors, T]]
   )(implicit encoder: Encoder[T], request: Option[Request[IO]] = None): IO[Response[IO]] =
-    IO.fromFuture(IO(future)).flatMap {
-      case Left(err)  => BadRequest(error2Json(err))
-      case Right(res) => Created(res.asJson)
-    }
+    IO.fromFuture(IO(future))
+      .recover { pf =>
+        pf.printStackTrace()
+        Left(SERVER_ERROR)
+      }
+      .flatMap {
+        case Left(err)  => BadRequest(error2Json(err))
+        case Right(res) => Created(res.asJson)
+      }
 
   def jsonRes[T](future: Future[T])(implicit encoder: Encoder[T], request: Option[Request[IO]] = None): IO[Response[IO]] =
     IO.fromFuture(IO(future)).flatMap(res => Ok(res.asJson))

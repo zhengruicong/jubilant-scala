@@ -18,7 +18,7 @@ object Ip2Region {
   def parseIp(request: Request[IO]): String = {
     val remoteIp = request.remoteAddr.map(addr => addr.toString)
 
-    if (remoteIp.contains("0:0:0:0:0:0:0:1")) {
+    if (remoteIp.contains("0:0:0:0:0:0:0:1") || remoteIp.contains("::1")) {
       return "127.0.0.1"
     }
     val realIp: Option[String]       = request.headers.headers.find(_.name.toString == "X-Real-IP").map(_.value).filter(checkIP)

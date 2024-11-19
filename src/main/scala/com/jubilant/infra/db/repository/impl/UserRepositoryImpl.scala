@@ -36,10 +36,15 @@ class UserRepositoryImpl(
     } yield user.map(user => user.copy(role = role))
 
   override def getByName(username: String): Future[Option[User]] =
-    db.run(users.filter(_.username === username).result.headOption).flatMap {
-      case None         => Future.successful(None)
-      case Some(userPo) => get(userPo.id)
-    }
+    db.run(users.filter(_.username === username).result.headOption)
+      .flatMap {
+        case None         => Future.successful(None)
+        case Some(userPo) => get(userPo.id)
+      }
+      .recover { pf =>
+        pf.printStackTrace()
+        None
+      }
 
   override def remove(id: Long): Future[Unit] = db.run {
     for {
